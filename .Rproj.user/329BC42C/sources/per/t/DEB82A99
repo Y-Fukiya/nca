@@ -1,0 +1,31 @@
+{
+    "id": "DEB82A99",
+    "path": "~/Downloads/nca/nca/script/nca_qmd.qmd",
+    "project_path": "script/nca_qmd.qmd",
+    "type": "quarto_markdown",
+    "hash": "3114031572",
+    "contents": "",
+    "dirty": false,
+    "created": 1686198118693.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "rmdVisualMode": "true",
+        "rmdVisualWrapConfigured": "true",
+        "source_window_id": "",
+        "Source": "Source",
+        "docOutlineVisible": "1",
+        "rmdVisualCollapsedChunks": "",
+        "rmdVisualModeLocation": "419:700",
+        "cursorPosition": "25,0",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1686200596,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1686200596464,
+    "read_only": false,
+    "read_only_alternatives": []
+}

@@ -1,0 +1,8 @@
+"0","#| label: Data-import"
+"0","path   <- here::here()"
+"0","dspath <- paste(path , ""adam"", ""adsl.sas7bdat"" , sep = ""/"")"
+"0","adsl   <- read.sas7bdat(dspath)"
+"0","dspath <- paste(path , ""adam"", ""adpc.sas7bdat"" , sep = ""/"")"
+"0","adpc   <- read.sas7bdat(dspath)"
+"0","dspath <- paste(path , ""adam"", ""adpp.sas7bdat"" , sep = ""/"")"
+"0","adpp   <- read.sas7bdat(dspath)"
