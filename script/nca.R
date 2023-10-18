@@ -1,25 +1,55 @@
-renv::init()
-###############################################################################################
-#install.packages(c('NonCompart', 'ncar','sas7bdat','tidyverse','patchwork','Tplyr','huxtable'))
-#install.packages("pharmaRTF")
-library(NonCompart)
-library(ncar)
-library(sas7bdat)
-library(tidyverse)
-library(patchwork)
-library(Tplyr)
-library(huxtable)
-library(pharmaRTF)
+rm(list=ls()); gc();  gc();
+if (!require("renv")  ) {install.packages("renv")}
+if (!require("pacman")) {install.packages("pacman")}
+
+# CRAN から入手可能なパッケージ
+##############################
+pacman::p_load(
+  # 一般的なデータ管理
+  ####################
+  tidyverse, 
+  magrittr, 
+  
+  # パッケージのインストールと管理
+  ################################
+  pacman,   # パッケージのインストール・読み込み
+  renv,     # グループで作業する際のパッケージのバージョン管理  
+  
+  # プロジェクトとファイルの管理
+  ##############################
+  here,     # Rのプロジェクトフォルダを基準とするファイルパス
+  rio,      # 様々なタイプのデータのインポート・エクスポート
+  
+  # 臨床薬理領域系の解析パッケージ
+  ################################
+  NonCompart, # NCA処理するバッケージ
+  ncar,       # NonCompartの拡張版
+  
+  # CDISC ADaM関連パッケージ
+  ##########################
+  Tplyr,     # Rのプロジェクトフォルダを基準とするファイルパス
+
+  # スタイルテーブル関連パッケージ
+  ################################
+  huxtable,  # HTML, LaTeX, RTF, 'Word', 'Excel', and 'PowerPoint'へ変換可能なスタイル
+  
+  # 図表関連パッケージ
+  ####################
+  patchwork, # 複数の図表をまとめられるパッケージ
+  
+  # 出力形式関連パッケージ
+  ########################
+  pharmaRTF  # 医薬品申請関連資料の出力用パッケージ
+  )
+
 ###############################################################################################
 #setwd("temp")
 path   <- here::here()
-dspath <- paste(path , "adam", "adsl.sas7bdat" , sep = "/")
-adsl   <- read.sas7bdat(dspath)
-dspath <- paste(path , "adam", "adpc.sas7bdat" , sep = "/")
-adpc   <- read.sas7bdat(dspath)
-dspath <- paste(path , "adam", "adpp.sas7bdat" , sep = "/")
-adpp   <- read.sas7bdat(dspath)
-################################################################################################
+adsl   <- import(paste(path , "adam", "adsl.sas7bdat" , sep = "/"))
+adpc   <- import(paste(path , "adam", "adpc.sas7bdat" , sep = "/"))
+adpp   <- import(paste(path , "adam", "adpp.sas7bdat" , sep = "/"))
+
+###############################################################################################
 
 adpc2 <- adpc %>%
   filter(  PARAMCD=="THEOPHS" 
@@ -35,7 +65,7 @@ nca_c01 <- adpc2 %>%
          , colConc = "AVAL"
          , dose    = 320
          , adm     = "Extravascular"
-         , dur     = 0
+         , dur     = 0ß
          , doseUnit = "mg"
          , timeUnit = "h"
          , concUnit = "mg/L"
@@ -206,5 +236,3 @@ p4 <- adpc2 %>%
   theme(legend.position = "none",plot.title = element_text(hjust = 0.5)) 
 
 p3 + p4
-
-renv::snapshot()
