@@ -1,0 +1,140 @@
+---
+title: "NCA Programming"
+author: "Theme 6"
+date: "2022-12-20"
+output: word_document
+---
+
+## Load Package
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#install.packages(c('NonCompart', 'ncar','sas7bdat','tidyverse','patchwork','Tplyr','huxtable'))
+library(NonCompart)
+library(ncar)
+library(sas7bdat)
+library(tidyverse)
+library(patchwork)
+library(Tplyr)
+library(huxtable)
+```
+
+## Data import
+
+```{r import}
+path   <- getwd()
+dspath <- paste(path , "adpc.sas7bdat" , sep = "/")
+adpc   <- read.sas7bdat(dspath)
+dspath <- paste(path , "adpp.sas7bdat" , sep = "/")
+adpp   <- read.sas7bdat(dspath)
+```
+
+## NCA
+
+adpc => NCA analysis
+
+```{r nca}
+adpc2 <- adpc %>%
+  filter(  PARAMCD=="THEOPHS" 
+         & TRTA %in% c("Theophylline_C01","Theophylline_C02") ) %>%
+  mutate(ARELTM2 = if_else(ARELTM < 0, 0 ,ARELTM))
+
+
+nca_c01 <- adpc2 %>% 
+  filter(TRTA=="Theophylline_C01") %>%
+  tblNCA(  .
+         , key     = "SUBJID"
+         , colTime = "ARELTM2"
+         , colConc = "AVAL"
+         , dose    = 320
+         , adm     = "Extravascular"
+         , dur     = 0
+         , doseUnit = "mg"
+         , timeUnit = "h"
+         , concUnit = "mg/L"
+         , down     = "Linear")
+
+nca_c02 <- adpc2 %>% 
+  filter(TRTA=="Theophylline_C02") %>%
+  tblNCA(  .
+         , key     = "SUBJID"
+         , colTime = "ARELTM2"
+         , colConc = "AVAL"
+         , dose    = 640
+         , adm     = "Extravascular"
+         , dur     = 0
+         , doseUnit = "mg"
+         , timeUnit = "h"
+         , concUnit = "mg/L"
+         , down     = "Linear")
+
+nca <- rbind(nca_c01, nca_c02)
+```
+
+## PK concentration plot
+
+#### 個別推移図
+
+##### 320 mg
+```{r PKconcPlot1, warning=FALSE, fig.width = 10, fig.height = 5}
+
+p1 <- adpc2 %>% 
+  filter(TRTA=="Theophylline_C01") %>%
+  ggplot(.,aes(x=ARELTM2,y=AVAL,group=SUBJID))+
+  theme_set(theme_classic()) +
+  geom_line(aes(linetype = SUBJID))+
+  ggtitle("Linier view") +
+  xlab("Time (h)")+
+  ylab("Concentration (mg/L)")+
+  theme_bw()+ 
+  theme(legend.position = "none",plot.title = element_text(hjust = 0.5)) 
+
+p2<- adpc2 %>% 
+  filter(TRTA=="Theophylline_C01") %>%
+  ggplot(.,aes(x=ARELTM2,y=AVAL,group=SUBJID))+ 
+  theme_set(theme_classic()) +
+  geom_line(aes(linetype = SUBJID))+
+  geom_abline(intercept = log10(1), slope = 0,linetype = 2) +
+  annotate("text", x=22, y=0.9, label="BLQ")+
+  ggtitle("Semilogarithmic view") +
+  xlab("Time (h)")+
+  scale_y_continuous(trans='log10')+
+  ylab("Concentration (mg/L)")+
+  theme_bw()+ 
+  theme(legend.position = "none",plot.title = element_text(hjust = 0.5))
+
+p1 + p2
+
+```
+
+##### 640 mg
+
+```{r PKconcPlot2, warning=FALSE, fig.width = 10, fig.height = 5}
+p3 <- adpc2 %>% 
+  filter(TRTA=="Theophylline_C02") %>%
+  ggplot(.,aes(x=ARELTM2,y=AVAL,group=SUBJID))+
+  theme_set(theme_classic()) +
+  geom_line(aes(linetype = SUBJID))+
+  ggtitle("Linier view") +
+  xlab("Time (h)")+
+  ylab("Concentration (mg/L)")+
+  theme_bw()+ 
+  theme(legend.position = "none",plot.title = element_text(hjust = 0.5)) 
+
+p4 <- adpc2 %>% 
+  filter(TRTA=="Theophylline_C02") %>%
+  ggplot(.,aes(x=ARELTM2,y=AVAL,group=SUBJID))+ 
+  theme_set(theme_classic()) +
+  geom_line(aes(linetype = SUBJID))+
+  geom_abline(intercept = log10(1), slope = 0,linetype = 2) +
+  annotate("text", x=22, y=0.9, label="BLQ")+
+  ggtitle("Semilogarithmic view") +
+  xlab("Time (h)")+
+  scale_y_continuous(trans='log10')+
+  ylab("Concentration (mg/L)")+
+  theme_bw()+ 
+  theme(legend.position = "none",plot.title = element_text(hjust = 0.5)) 
+
+p3 + p4
+
+```

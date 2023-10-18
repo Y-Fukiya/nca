@@ -1,0 +1,188 @@
+---
+title: "NCA Programming"
+author: "Theme 6"
+date: "2022-12-20"
+format: docx
+editor: visual
+execute:
+  warning: false
+---
+
+## Load Package
+
+```{r}
+#| label: load-packages
+#| include: false
+rm(list=ls()); gc();  gc();
+if (!require("renv")  ) {install.packages("renv")}
+if (!require("pacman")) {install.packages("pacman")}
+
+# CRAN から入手可能なパッケージ
+##############################
+pacman::p_load(
+  # 一般的なデータ管理
+  ####################
+  tidyverse, 
+  magrittr, 
+  
+  # パッケージのインストールと管理
+  ################################
+  pacman,   # パッケージのインストール・読み込み
+  renv,     # グループで作業する際のパッケージのバージョン管理  
+  
+  # プロジェクトとファイルの管理
+  ##############################
+  here,     # Rのプロジェクトフォルダを基準とするファイルパス
+  rio,      # 様々なタイプのデータのインポート・エクスポート
+  
+  # 臨床薬理領域系の解析パッケージ
+  ################################
+  NonCompart, # NCA処理するバッケージ
+  ncar,       # NonCompartの拡張版
+  
+  # CDISC ADaM関連パッケージ
+  ##########################
+  Tplyr,     # Rのプロジェクトフォルダを基準とするファイルパス
+
+  # スタイルテーブル関連パッケージ
+  ################################
+  huxtable,  # HTML, LaTeX, RTF, 'Word', 'Excel', and 'PowerPoint'へ変換可能なスタイル
+  
+  # 図表関連パッケージ
+  ####################
+  patchwork, # 複数の図表をまとめられるパッケージ
+  
+  # 出力形式関連パッケージ
+  ########################
+  pharmaRTF  # 医薬品申請関連資料の出力用パッケージ
+  )
+```
+
+## Data import
+
+```{r}
+#| label: Data-import
+path   <- here::here()
+adsl   <- import(paste(path , "adam", "adsl.sas7bdat" , sep = "/"))
+adpc   <- import(paste(path , "adam", "adpc.sas7bdat" , sep = "/"))
+adpp   <- import(paste(path , "adam", "adpp.sas7bdat" , sep = "/"))
+```
+
+## NCA
+
+adpc =\> NCA analysis
+
+```{r}
+#| label: NCA
+adpc2 <- adpc %>%
+  filter(  PARAMCD=="THEOPHS" 
+         & TRTA %in% c("Theophylline_C01","Theophylline_C02") ) %>%
+  mutate(ARELTM2 = if_else(ARELTM < 0, 0 ,ARELTM))
+
+
+nca_c01 <- adpc2 %>% 
+  filter(TRTA=="Theophylline_C01") %>%
+  tblNCA(  .
+         , key     = "SUBJID"
+         , colTime = "ARELTM2"
+         , colConc = "AVAL"
+         , dose    = 320
+         , adm     = "Extravascular"
+         , dur     = 0
+         , doseUnit = "mg"
+         , timeUnit = "h"
+         , concUnit = "mg/L"
+         , down     = "Linear")
+
+nca_c02 <- adpc2 %>% 
+  filter(TRTA=="Theophylline_C02") %>%
+  tblNCA(  .
+         , key     = "SUBJID"
+         , colTime = "ARELTM2"
+         , colConc = "AVAL"
+         , dose    = 640
+         , adm     = "Extravascular"
+         , dur     = 0
+         , doseUnit = "mg"
+         , timeUnit = "h"
+         , concUnit = "mg/L"
+         , down     = "Linear")
+
+nca <- rbind(nca_c01, nca_c02)
+```
+
+## PK concentration plot
+
+#### 個別推移図
+
+##### 320 mg
+
+```{r}
+#| label: PKplot1
+#| fig-align: center
+#| fig-width: 10
+#| fig-height: 5
+p1 <- adpc2 %>% 
+  filter(TRTA=="Theophylline_C01") %>%
+  ggplot(.,aes(x=ARELTM2,y=AVAL,group=SUBJID))+
+  theme_set(theme_classic()) +
+  geom_line(aes(linetype = SUBJID))+
+  ggtitle("Linier view") +
+  xlab("Time (h)")+
+  ylab("Concentration (mg/L)")+
+  theme_bw()+ 
+  theme(legend.position = "none",plot.title = element_text(hjust = 0.5)) 
+
+p2<- adpc2 %>% 
+  filter(TRTA=="Theophylline_C01") %>%
+  ggplot(.,aes(x=ARELTM2,y=AVAL,group=SUBJID))+ 
+  theme_set(theme_classic()) +
+  geom_line(aes(linetype = SUBJID))+
+  geom_abline(intercept = log10(0.5), slope = 0,linetype = 2) +
+  annotate("text", x=22, y=0.4, label="BLQ")+
+  ggtitle("Semilogarithmic view") +
+  xlab("Time (h)")+
+  scale_y_continuous(trans='log10')+
+  ylab("Concentration (mg/L)")+
+  theme_bw()+ 
+  theme(legend.position = "none",plot.title = element_text(hjust = 0.5))
+
+p1 + p2
+
+```
+
+##### 640 mg
+
+```{r}
+#| label: PKplot2
+#| fig-align: center
+#| fig-width: 10
+#| fig-height: 5
+p3 <- adpc2 %>% 
+  filter(TRTA=="Theophylline_C02") %>%
+  ggplot(.,aes(x=ARELTM2,y=AVAL,group=SUBJID))+
+  theme_set(theme_classic()) +
+  geom_line(aes(linetype = SUBJID))+
+  ggtitle("Linier view") +
+  xlab("Time (h)")+
+  ylab("Concentration (mg/L)")+
+  theme_bw()+ 
+  theme(legend.position = "none",plot.title = element_text(hjust = 0.5)) 
+
+p4 <- adpc2 %>% 
+  filter(TRTA=="Theophylline_C02") %>%
+  ggplot(.,aes(x=ARELTM2,y=AVAL,group=SUBJID))+ 
+  theme_set(theme_classic()) +
+  geom_line(aes(linetype = SUBJID))+
+  geom_abline(intercept = log10(0.5), slope = 0,linetype = 2) +
+  annotate("text", x=22, y=0.4, label="BLQ")+
+  ggtitle("Semilogarithmic view") +
+  xlab("Time (h)")+
+  scale_y_continuous(trans='log10')+
+  ylab("Concentration (mg/L)")+
+  theme_bw()+ 
+  theme(legend.position = "none",plot.title = element_text(hjust = 0.5)) 
+
+p3 + p4
+
+```
